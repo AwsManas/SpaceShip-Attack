@@ -15,15 +15,21 @@ screen= pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Shoot-em-up")
 clock = pygame.time.Clock()
 game_folder = os.path.dirname(__file__)
-img_folder = os.path.join(game_folder,"art(stolen)")
+img_folder = os.path.join(game_folder,"shooter-graphics")
 all_sprites= pygame.sprite.Group()
+# Loading all game graphics 
+background = pygame.image.load(os.path.join(img_folder,"back.png")).convert()
+background_rect=background.get_rect()
+ship_img = pygame.image.load(os.path.join(img_folder,"ship.png")).convert()
+laser_img = pygame.image.load(os.path.join(img_folder,"ebullet1.png")).convert()
+mob_img = pygame.image.load(os.path.join(img_folder,"ast1.png")).convert()
 class battleship(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         #self.image = pygame.image.load(os.path.join(img_folder,"battleship.jpg")).convert()
-        self.image = pygame.Surface((30,40))
-        #self.image.set_colorkey(white)
-        self.image.fill(red)
+        self.image = pygame.transform.scale( ship_img ,(60,60)) #pygame.Surface((30,40))
+        self.image.set_colorkey(white)
+        #self.image.fill(red)
         self.rect = self.image.get_rect() 
         self.rect.centerx = WIDTH/2
         self.rect.bottom = HEIGHT-10
@@ -49,8 +55,9 @@ class battleship(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
        pygame.sprite.Sprite.__init__(self)
-       self.image = pygame.Surface((20,20))
-       self.image.fill(black)
+       self.image = pygame.transform.scale( mob_img ,(30,30))#pygame.Surface((20,20))
+       self.image.set_colorkey(white)
+       #self.image.fill(black)
        self.rect = self.image.get_rect()
        self.rect.x = random.randrange(0,WIDTH-self.rect.width)
        self.rect.y = random.randrange(-140,-40)
@@ -69,8 +76,9 @@ Bull = pygame.sprite.Group()
 class bullets(pygame.sprite.Sprite):
     def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((5,8))
-        self.image.fill((0,100,0))
+        self.image = pygame.transform.scale( laser_img ,(5,10))#pygame.Surface((5,8))
+        #self.image.fill((0,100,0))
+        self.image.set_colorkey(black)
         self.rect = self.image.get_rect()
         self.rect.bottom = y
         self.rect.centerx = x
@@ -106,10 +114,12 @@ while running:
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
-    hits = pygame.sprite.spritecollide(ship,mobs, False)
+    hits = pygame.sprite.spritecollide(ship,mobs,False)
     if hits : 
         running = False
     screen.fill(white)
-    all_sprites.draw(screen)#Draw where?
+    screen.blit(background,background_rect)
+    all_sprites.draw(screen)
+    #Draw where?
     pygame.display.flip()
 pygame.quit()
