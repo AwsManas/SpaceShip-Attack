@@ -17,6 +17,7 @@ pygame.display.set_caption("HueHue:)")
 clock = pygame.time.Clock()
 game_folder = os.path.dirname(__file__)
 img_folder = os.path.join(game_folder,"shooter-graphics")
+song_folder = os.path.join(game_folder,"sounds")
 all_sprites= pygame.sprite.Group()
 # Loading all game graphics 
 background = pygame.image.load(os.path.join(img_folder,"back.png")).convert()
@@ -28,6 +29,11 @@ asteroid_images = []
 asteroid_list = ["ast1.png","ast2.png","ast3.png","ast4.png"]
 for img in asteroid_list:
     asteroid_images.append(pygame.image.load(os.path.join(img_folder,img)).convert())
+#Loading sounds 
+shoot_sound = pygame.mixer.Sound(os.path.join(song_folder,"bf.wav"))
+explo_sound = pygame.mixer.Sound(os.path.join(song_folder,'explosion.wav'))
+background_sound = pygame.mixer.music.load(os.path.join(song_folder,'bck.wav'))    
+pygame.mixer.music.set_volume(0.3)
 class battleship(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -59,6 +65,7 @@ class battleship(pygame.sprite.Sprite):
         bullet = bullets(self.rect.centerx,self.rect.top)    
         all_sprites.add(bullet)
         Bull.add(bullet)
+        shoot_sound.play()
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
        pygame.sprite.Sprite.__init__(self)
@@ -128,6 +135,7 @@ def draw_text(surfacee,text,size,x,y):
 
 #Game loop
 all_sprites.add(ship)
+pygame.mixer.music.play(loops=-1)
 running = True
 while running:
     clock.tick(FPS)
@@ -148,6 +156,7 @@ while running:
     hits = pygame.sprite.groupcollide(mobs,Bull,True,True)
     for hit in hits:
         points+=hit.speedy
+        explo_sound.play()
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
