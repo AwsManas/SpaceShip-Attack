@@ -9,6 +9,7 @@ white=(255,255,255)
 black=(0,0,0)
 red=(255,0,0)
 Yellow=(255,255,0)
+green = (0,255,0)
 """ Initialise pygame and create window"""
 pygame.init()
 pygame.mixer.init() # initialise sound
@@ -34,6 +35,19 @@ shoot_sound = pygame.mixer.Sound(os.path.join(song_folder,"bf.wav"))
 explo_sound = pygame.mixer.Sound(os.path.join(song_folder,'explosion.wav'))
 background_sound = pygame.mixer.music.load(os.path.join(song_folder,'bck.wav'))    
 pygame.mixer.music.set_volume(0.3)
+explosion_anim = {} 
+explosion_anim['lar']=[]
+explosion_anim['sml']=[]
+for i in range(9):
+    filename = 'regularExplosion0'+str(i)+'.png'
+    img = pygame.image.load(os.path.join(img_folder,filename)).convert()
+    img.set_colorkey(black)
+    img_lr = pygame.transform.scale(img,(60,60))
+    img_sm = pygame.transform.scale(img,(30,30))
+    explosion_anim['lar'].append(img_lr)
+    explosion_anim['sml'].append(img_lr)
+
+
 class battleship(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -48,6 +62,7 @@ class battleship(pygame.sprite.Sprite):
         self.rect.bottom = HEIGHT-10
         self.speedx = 0
         self.speedy = 0 
+        self.health = 100
     def update(self):    
         self.speedx = 0
         self.speedy = 0
@@ -103,7 +118,6 @@ class Mob(pygame.sprite.Sprite):
             self.speedy = random.randrange(1,7)
 mobs = pygame.sprite.Group()
 Bull = pygame.sprite.Group()
-
 class bullets(pygame.sprite.Sprite):
     def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)
@@ -118,6 +132,30 @@ class bullets(pygame.sprite.Sprite):
         self.rect.y += self.speedy
         if self.rect.bottom<0:
             self.kill()            
+class explo(pygame.sprite.Sprite):
+    def __init__(self,center,size):
+        pygame.sprite.Sprite.__init__(self)
+        self.size = size
+        self.image = explosion_anim[self.size][0]
+        self.rect = self.image.get_rect()
+        self.rect.center = center 
+        self.frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.frame_rate = 50
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate:
+            self.last_update = now
+            self.frame+=1
+            if self.frame == len(explosion_anim[self.size]):
+                self.kill()
+            else :
+                center = self.rect.center
+                self.image = explosion_anim[self.size][self.frame]
+                self.rect = self.image.get_rect()
+                self.rect.center = center
+
+
 ship = battleship()
 for i in range(7):
     m = Mob()
@@ -125,13 +163,22 @@ for i in range(7):
     all_sprites.add(m)
 points = 10
 font_name = pygame.font.match_font('comic')
-
 def draw_text(surfacee,text,size,x,y):
     font = pygame.font.Font(font_name,size)
     text_surface=font.render(text,True,Yellow)
     text_rect=text_surface.get_rect()
     text_rect.midtop=(x,y)
     surfacee.blit(text_surface,text_rect)
+def draw_health(surface,x,y,health):
+    if health < 0:
+        health = 0
+    height = 5
+    lenght = WIDTH 
+    fill = (health/100)* lenght
+    outerrect = pygame.Rect(x,y,lenght,height)
+    innerrect = pygame.Rect(x,y,fill,height)
+    pygame.draw.rect(surface,red,outerrect)
+    pygame.draw.rect(surface,green,innerrect)
 
 #Game loop
 all_sprites.add(ship)
@@ -155,18 +202,28 @@ while running:
     # check  collision 
     hits = pygame.sprite.groupcollide(mobs,Bull,True,True)
     for hit in hits:
-        points+=hit.speedy
+        points+=int(hit.speedy/1.5)
         explo_sound.play()
+        expl = explo(hit.rect.center,'lar')
+        all_sprites.add(expl)
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
-    hits = pygame.sprite.spritecollide(ship,mobs,False,pygame.sprite.collide_circle)
-    if hits : 
-        running = False
+    hits = pygame.sprite.spritecollide(ship,mobs,True,pygame.sprite.collide_circle)
+    for hit in hits : 
+        m = Mob()
+        all_sprites.add(m)
+        mobs.add(m)
+        ship.health -= int(abs(hit.speedx) + int(hit.speedy))*2
+        expl = explo(hit.rect.center,'sml')
+        all_sprites.add(expl)
+        if ship.health < 1 :
+            running = False
     screen.fill(white)
     screen.blit(background,background_rect)
     all_sprites.draw(screen)
     draw_text(screen,str(points),20,WIDTH/2,20)
+    draw_health(screen,0,HEIGHT-7,ship.health)
     #Draw where?
     pygame.display.flip()
 pygame.quit()
