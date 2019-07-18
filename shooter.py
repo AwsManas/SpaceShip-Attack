@@ -12,7 +12,7 @@ red=(255,0,0)
 pygame.init()
 pygame.mixer.init() # initialise sound
 screen= pygame.display.set_mode((WIDTH,HEIGHT))
-pygame.display.set_caption("Shoot-em-up")
+pygame.display.set_caption("HueHue:)")
 clock = pygame.time.Clock()
 game_folder = os.path.dirname(__file__)
 img_folder = os.path.join(game_folder,"shooter-graphics")
@@ -28,9 +28,11 @@ class battleship(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         #self.image = pygame.image.load(os.path.join(img_folder,"battleship.jpg")).convert()
         self.image = pygame.transform.scale( ship_img ,(60,60)) #pygame.Surface((30,40))
-        self.image.set_colorkey(white)
+        self.image.set_colorkey(black)
         #self.image.fill(red)
         self.rect = self.image.get_rect() 
+        self.radius = 29
+        #pygame.draw.circle(self.image,red,self.rect.center,self.radius)
         self.rect.centerx = WIDTH/2
         self.rect.bottom = HEIGHT-10
         self.speedx = 0
@@ -56,9 +58,11 @@ class Mob(pygame.sprite.Sprite):
     def __init__(self):
        pygame.sprite.Sprite.__init__(self)
        self.image = pygame.transform.scale( mob_img ,(30,30))#pygame.Surface((20,20))
-       self.image.set_colorkey(white)
+       self.image.set_colorkey(black)
        #self.image.fill(black)
        self.rect = self.image.get_rect()
+       self.radius = 15
+       #pygame.draw.circle(self.image,red,self.rect.center,self.radius)
        self.rect.x = random.randrange(0,WIDTH-self.rect.width)
        self.rect.y = random.randrange(-140,-40)
        self.speedy = random.randrange(1,6)
@@ -114,7 +118,7 @@ while running:
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
-    hits = pygame.sprite.spritecollide(ship,mobs,False)
+    hits = pygame.sprite.spritecollide(ship,mobs,False,pygame.sprite.collide_circle)
     if hits : 
         running = False
     screen.fill(white)
