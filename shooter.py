@@ -22,7 +22,11 @@ background = pygame.image.load(os.path.join(img_folder,"back.png")).convert()
 background_rect=background.get_rect()
 ship_img = pygame.image.load(os.path.join(img_folder,"ship.png")).convert()
 laser_img = pygame.image.load(os.path.join(img_folder,"ebullet1.png")).convert()
-mob_img = pygame.image.load(os.path.join(img_folder,"ast1.png")).convert()
+#mob_img = pygame.image.load(os.path.join(img_folder,"ast1.png")).convert()
+asteroid_images = []
+asteroid_list = ["ast1.png","ast2.png","ast3.png","ast4.png"]
+for img in asteroid_list:
+    asteroid_images.append(pygame.image.load(os.path.join(img_folder,img)).convert())
 class battleship(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -57,17 +61,32 @@ class battleship(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
        pygame.sprite.Sprite.__init__(self)
-       self.image = pygame.transform.scale( mob_img ,(30,30))#pygame.Surface((20,20))
-       self.image.set_colorkey(black)
+       self.image_orig = pygame.transform.scale( random.choice(asteroid_images) ,(30,30))#pygame.Surface((20,20))
+       self.image_orig.set_colorkey(black)
+       self.image = self.image_orig.copy()
        #self.image.fill(black)
        self.rect = self.image.get_rect()
        self.radius = 15
        #pygame.draw.circle(self.image,red,self.rect.center,self.radius)
        self.rect.x = random.randrange(0,WIDTH-self.rect.width)
+       self.rot = 0
+       self.rotspeed = random.randrange(-10,10)
        self.rect.y = random.randrange(-140,-40)
        self.speedy = random.randrange(1,6)
        self.speedx = -2 + random.randrange(0,4)
+       self.last_update=pygame.time.get_ticks()
+    def rotate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > 60:
+            self.last_update = now
+            self.rot = (self.rot + self.rotspeed) % 360
+            new_image = pygame.transform.rotate(self.image_orig,self.rot)
+            old_center = self.rect.center
+            self.image = new_image
+            self.rect = self.image.get_rect()
+            self.rect.center = old_center # rotating by center 
     def update(self):
+        self.rotate()
         self.rect.y+=self.speedy       
         self.rect.x+=self.speedx
         if self.rect.top > HEIGHT +20 or self.rect.left < -20 or self.rect.right > WIDTH+20 :
