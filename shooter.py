@@ -24,6 +24,8 @@ all_sprites= pygame.sprite.Group()
 background = pygame.image.load(os.path.join(img_folder,"back.png")).convert()
 background_rect=background.get_rect()
 ship_img = pygame.image.load(os.path.join(img_folder,"ship.png")).convert()
+ship_tag = pygame.transform.scale(ship_img,(15,15))
+ship_tag.set_colorkey(black)
 laser_img = pygame.image.load(os.path.join(img_folder,"ebullet1.png")).convert()
 #mob_img = pygame.image.load(os.path.join(img_folder,"ast1.png")).convert()
 asteroid_images = []
@@ -35,9 +37,12 @@ shoot_sound = pygame.mixer.Sound(os.path.join(song_folder,"bf.wav"))
 explo_sound = pygame.mixer.Sound(os.path.join(song_folder,'explosion.wav'))
 background_sound = pygame.mixer.music.load(os.path.join(song_folder,'bck.wav'))    
 pygame.mixer.music.set_volume(0.3)
+player_die_sound = pygame.mixer.Sound(os.path.join(song_folder,'shipdes.ogg'))
 explosion_anim = {} 
 explosion_anim['lar']=[]
 explosion_anim['sml']=[]
+explosion_anim['player']=[]
+
 for i in range(9):
     filename = 'regularExplosion0'+str(i)+'.png'
     img = pygame.image.load(os.path.join(img_folder,filename)).convert()
@@ -45,9 +50,12 @@ for i in range(9):
     img_lr = pygame.transform.scale(img,(60,60))
     img_sm = pygame.transform.scale(img,(30,30))
     explosion_anim['lar'].append(img_lr)
-    explosion_anim['sml'].append(img_lr)
-
-
+    explosion_anim['sml'].append(img_sm)
+    filename = 'sonicExplosion0'+str(i)+'.png'
+    img = pygame.image.load(os.path.join(img_folder,filename)).convert()
+    img.set_colorkey(black)
+    img_tr = pygame.transform.scale(img,(100,100))
+    explosion_anim['player'].append(img_tr)
 class battleship(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -63,7 +71,14 @@ class battleship(pygame.sprite.Sprite):
         self.speedx = 0
         self.speedy = 0 
         self.health = 100
+        self.lives = 2
+        self.hidden = False
+        self.hide_timer = pygame.time.get_ticks()
     def update(self):    
+        if self.hidden and pygame.time.get_ticks() - self.hide_timer > 2000 :
+            self.hidden = False
+            self.rect.centerx =WIDTH/2
+            self.rect.bottom = HEIGHT -10
         self.speedx = 0
         self.speedy = 0
         keyspressed = pygame.key.get_pressed()
@@ -81,6 +96,11 @@ class battleship(pygame.sprite.Sprite):
         all_sprites.add(bullet)
         Bull.add(bullet)
         shoot_sound.play()
+    def hide(self):
+        self.hidden = True
+        self.hide_timer = pygame.time.get_ticks()
+        self.rect.center = (WIDTH/2,HEIGHT+200)
+
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
        pygame.sprite.Sprite.__init__(self)
@@ -179,6 +199,12 @@ def draw_health(surface,x,y,health):
     innerrect = pygame.Rect(x,y,fill,height)
     pygame.draw.rect(surface,red,outerrect)
     pygame.draw.rect(surface,green,innerrect)
+def draw_lives(surface,x,y,lives,img):
+    for i in range(lives):
+        img_rect = img.get_rect()
+        img_rect.x = x + 20*i
+        img_rect.y = y
+        surface.blit(img,img_rect)
 
 #Game loop
 all_sprites.add(ship)
@@ -202,7 +228,7 @@ while running:
     # check  collision 
     hits = pygame.sprite.groupcollide(mobs,Bull,True,True)
     for hit in hits:
-        points+=int(hit.speedy/1.5)
+        points+=int(hit.speedy)
         explo_sound.play()
         expl = explo(hit.rect.center,'lar')
         all_sprites.add(expl)
@@ -215,15 +241,26 @@ while running:
         all_sprites.add(m)
         mobs.add(m)
         ship.health -= int(abs(hit.speedx) + int(hit.speedy))*2
-        expl = explo(hit.rect.center,'sml')
-        all_sprites.add(expl)
+        if not ship.health < 1: 
+            explo_sound.play()
+            expl = explo(hit.rect.center,'sml')
+            all_sprites.add(expl)
         if ship.health < 1 :
-            running = False
+            player_die_sound.play()
+            death_explo = explo(ship.rect.center,'player')
+            all_sprites.add(death_explo)
+            ship.hide()
+            ship.lives-=1
+            ship.health=100
+
+    if ship.lives==0 and not death_explo.alive():
+        running = False      
     screen.fill(white)
     screen.blit(background,background_rect)
     all_sprites.draw(screen)
     draw_text(screen,str(points),20,WIDTH/2,20)
     draw_health(screen,0,HEIGHT-7,ship.health)
+    draw_lives(screen,WIDTH-50,5,ship.lives,ship_tag)
     #Draw where?
     pygame.display.flip()
 pygame.quit()
