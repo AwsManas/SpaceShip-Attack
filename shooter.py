@@ -8,6 +8,7 @@ FPS = 60
 white=(255,255,255)
 black=(0,0,0)
 red=(255,0,0)
+Yellow=(255,255,0)
 """ Initialise pygame and create window"""
 pygame.init()
 pygame.mixer.init() # initialise sound
@@ -115,6 +116,15 @@ for i in range(7):
     m = Mob()
     mobs.add(m)
     all_sprites.add(m)
+points = 10
+font_name = pygame.font.match_font('comic')
+
+def draw_text(surfacee,text,size,x,y):
+    font = pygame.font.Font(font_name,size)
+    text_surface=font.render(text,True,Yellow)
+    text_rect=text_surface.get_rect()
+    text_rect.midtop=(x,y)
+    surfacee.blit(text_surface,text_rect)
 
 #Game loop
 all_sprites.add(ship)
@@ -129,11 +139,15 @@ while running:
         elif i.type==pygame.KEYDOWN:
             if i.key==pygame.K_SPACE:
                 ship.shoot()
+                points-=1
+                if points<1:
+                    running=False
 
     all_sprites.update()
     # check  collision 
     hits = pygame.sprite.groupcollide(mobs,Bull,True,True)
     for hit in hits:
+        points+=hit.speedy
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
@@ -143,6 +157,7 @@ while running:
     screen.fill(white)
     screen.blit(background,background_rect)
     all_sprites.draw(screen)
+    draw_text(screen,str(points),20,WIDTH/2,20)
     #Draw where?
     pygame.display.flip()
 pygame.quit()
